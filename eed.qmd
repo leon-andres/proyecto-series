@@ -167,19 +167,19 @@ Después de aplicar la transformación, la variabilidad de la serie se ha reduci
 #| echo: false
 
 # MASS::boxcox(lm(Cafe~1), seq(0,2, length = 50))
-a <-MASS::boxcox(lm(Oro~1), seq(-0.5,0.8, length = 50))
-lambO = a$x[which.max(a$y)]; lambO
+# a <-MASS::boxcox(lm(Oro~1), seq(-0.5,0.8, length = 50))
+# lambO = a$x[which.max(a$y)]; lambO
 Lambda<-forecast::BoxCox.lambda(Oro, method ="loglik", lower = -3, upper = 3)#Encontrando el valor de Lambda
 Lambda
 orot<-forecast::BoxCox(Oro,lambda = 0)#Transformando los datos
 
 MASS::boxcox(lm(Oro ~ 1),seq(-3, 5, length = 50))
-MASS::boxcox(lm(orot ~ 1),seq(-3, 5, length = 50))
+# MASS::boxcox(lm(orot ~ 1),seq(-3, 5, length = 50))
 
 
-plot_ly( x = DatosO$Fecha, y = orot, type = 'scatter', mode = 'lines',color=I("gold")) %>%
-  layout(title = 'Precio Oro regalías',
-         xaxis = list(title = 'Mes', rangeslider = list(type = 'date')))
+# plot_ly( x = DatosO$Fecha, y = orot, type = 'scatter', mode = 'lines',color=I("gold")) %>%
+#   layout(title = 'Precio Oro regalías',
+#          xaxis = list(title = 'Mes', rangeslider = list(type = 'date')))
 
 ```
 Se realiza la transformación con $\lambda = 0$, y se realiza de nuevo la prueba.
@@ -800,6 +800,12 @@ ggplot(DatosH, aes(x = Fecha, y = Cantidad)) +
 ```
 
 Sería una buena práctica en este caso implementar y comparar un modelo ARIMA con alguno más complejo que permita capturar mejor la volatilidad como por ejemplo LSTM o GARCH.
+
+```{r}
+#| execute: false
+# Aquí están todos los objetos de este cuaderno
+save.image(file = 'ObjetosDescriptiva.Rdata')
+```
 
 
 :::
