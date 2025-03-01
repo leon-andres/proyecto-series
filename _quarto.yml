@@ -1,0 +1,23 @@
+project:
+  type: book
+
+book:
+  title: "Series de tiempo"
+  author: "Nicolás Quenguan, Jerson Vargas, Andres F. Gamba, Andres D. León"
+  date: "5/2/2025"
+  chapters:
+    - index.qmd
+    - datos.qmd
+    - eed.qmd
+    - ModClasicos.qmd
+
+bibliography: references.bib
+
+format:
+  html:
+    theme: cosmo
+  pdf:
+    documentclass: scrreprt
+
+editor: visual
+
