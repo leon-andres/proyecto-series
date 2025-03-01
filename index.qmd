@@ -1,0 +1,24 @@
+# Contenido {.unnumbered}
+
+Este documento tiene como objetivo implementar la metodología y los conceptos del curso de Series de tiempo univariadas a dos series de diferente frecuencia. Se implementarán los modelos clásicos como ARIMA, ARCH y modelos de aprendizaje de máquina como bosques aleatorios y redes neuronales LSTM.
+
+Se evaluará la bondad de ajuste de cada uno de los modelos, así como la comprobación de los supuestos sobre los residuales y se harán pronósticos Ex Ante calculando métricas de desempeño como el error cuadrático medio (MSE). Se escogerá el modelo con mejor desempeño y finalmente se harán predicciones Ex Post con un horizonte de pronóstico plausible para cada serie.
+
+## Hoja de ruta
+
+1.  **Análisis descriptivo y exploratorio.**
+
+    -   [X] Precio del oro para regalias mensual en Colombia.
+
+    -   [X] Número de vehículos diarios hurtados en Bogotá.
+
+2.  **Ajuste de modelos.**
+
+    -   Modelo ARIMA
+        -   [ ] Implementación.
+
+        -   [ ] Diagnóstico de residuales.
+    -   Modelo random Forest
+        -   [ ] Implementación.
+
+        -   [ ] Diagnóstico de residuales.

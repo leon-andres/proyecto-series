@@ -1,0 +1,30 @@
+# Datos
+
+Volumen de exportaciones de café.
+
+::: {.panel-tabset}
+## Café
+
+![](_book/BanerCafe1.webp){fig-align="center" width="15cm" height="4cm"}
+
+Las exportaciones de café verde en Colombia representan un pilar fundamental de la economía nacional y del sector agroindustrial, ya que el país es reconocido como uno de los principales productores y exportadores de café en el mundo. Colombia se distingue por la producción de café arábica de alta calidad, cultivado en condiciones climáticas y geográficas ideales en la región andina. La Federación Nacional de Cafeteros de Colombia juega un papel clave en la regulación, promoción y sostenibilidad de estas exportaciones, asegurando estándares de calidad y facilitando el acceso a mercados internacionales. Históricamente, los principales destinos del café colombiano han sido Estados Unidos, Europa y Asia
+
+
+El modelado y pronóstico del volumen de exportaciones colombianas de café es crucial para la planificación estratégica del sector cafetero, ya que permite anticipar tendencias y ajustar las políticas de producción y comercialización. Mediante técnicas de análisis de series de tiempo, es posible identificar patrones estacionales, ciclicos y tendencias, permitiendo así una mejor toma de decisiones tanto para productores como para exportadores.
+
+
+La serie es de frecuencia mensual, que abarca desde 1958 hasta 2024 y proviene de la Federación Nacional de Cafeteros de Colombia. Los datos pueden ser descargados [aquí](https://federaciondecafeteros.org/wp/estadisticas-cafeteras/).
+
+
+## Hurtos
+![](_book/HurtosVehiculos1.webp){fig-align="center" width="15cm" height="4cm"}
+
+El hurto de vehículos en Bogotá es una problemática de seguridad que afecta tanto a ciudadanos como a las autoridades encargadas de la prevención del delito.
+prueba.
+
+
+El pronóstico de hurtos diarios a vehículos en Bogotá puede ayudar a las autoridades a distribuir recursos de manera más eficiente, identificando períodos de mayor riesgo y optimizando la vigilancia en zonas críticas. Además, el uso de modelos estadísticos y de aprendizaje automático permite evaluar el impacto de políticas de seguridad implementadas en distintos momentos, proporcionando una herramienta basada en datos para mejorar la planeación estratégica.
+
+
+Los datos corresponden a denuncias por la suma diaria de hechos de robos a automotores y motocicletas del 2003 al 2004 ante la fiscalía, CAI y artículos de prensa que luego son auditados por el Centro de Investigaciones Criminológicas (CICRI) de la DIJIN que se dedica a revisar la información contenida diariamente y hacen parte de las estadísticas del Minesterio de Defensa Nacional. Los datos fueron descargados de [este sitio](https://www.datos.gov.co/Seguridad-y-Defensa/HURTO-A-VEH-CULOS/csb4-y6v2/data_preview).
+:::
