@@ -1,5 +1,5 @@
 ---
-title: "Modelos de la familia ARIMA"
+title: "Modelos de la familia SARIMA"
 ---
 
 ```{r CargarObjetos}
@@ -50,7 +50,7 @@ OroDiff <- diff(Oro)
 
 # Hurtos
 Hurtos <- ts(HurtosTrain$BC, start = c(2003,01), frequency = 365)
-HurtosDiff <- diff(Oro)
+HurtosDiff <- diff(Hurtos)
 ```
 
 # Selección del modelo
@@ -161,6 +161,57 @@ Aunque el modelo MA(1) con media no cero es el que tiene el mejor desempeño en 
 
 ### Prueba de Dickey-Fuller aumentada
 
+```{r}
+#| echo: false
+
+# ar(HurtosDiff)
+aTSA::adf.test(HurtosDiff, nlag = 3)
+```
+
+No hay presencia de tendencia estocástica por raíz unitaria, se trabajará con la serie en primera diferencia ordinaria.
+
+### Estructura de autocorrelación
+
+Se determinarán los rezagos más significativos para la ***ACF*** y ***PACF***
+
+```{r HurtosAcfPacf}
+#| echo: false
+par(mfrow=c(1,2))
+forecast::Acf(HurtosDiff,80)
+forecast::Pacf(HurtosDiff,80)
+```
+
+Como lo habíamos visto en el periodograma, hay una correlación significativa cada 7 días.
+Por lo tanto con la prueba **nsdiffs()** se determina formalmente la presencia de raíz unitaria estacional. 
+
+Se realiza la diferencia ordinaria estacional y se obtiene lo siguiente
+
+
+```{r Hurtos-nsdiff}
+#| echo: false
+
+# s <- forecast::nsdiffs(HurtosDiff, test = 'ch')
+
+HurtosDiffS <- diff(HurtosDiff,lag = 7, differences = 1)
+par(mfrow=c(1,2))
+forecast::Acf(HurtosDiffS,80)
+forecast::Pacf(HurtosDiffS,80)
+
+
+
+```
+
+A lo más se podría considerar un modelo **SARIMA(6,1,1)X(11,1,1)[7]**. Sin embargo al considerar este modelo hubo problemas en la proceso de optimización y por lo tanto no se logró estimar.
+
+```{r}
+#| echo: false
+
+forecast::auto.arima(Hurtos)
+```
+
+
+Note que el ajuste automático no es efectivo pues no tiene en cuenta la componente estacional!.
+
 :::
 
 
@@ -228,7 +279,7 @@ for(i in 1:18){
 colnames(Ljung_Box) <- c("Rezago","p-valor");
 cat(" \n \n")
 cat("Prueba Ljung_Box Hip?tesis nula independencia \n \n")
-Ljung_Box
+# Ljung_Box
 
 par(mfrow=c(1,1))
 plot(Ljung_Box, main="Prueba Ljung and Box \n H0: Independencia",ylim=c(0,1))
@@ -312,11 +363,233 @@ Además, el test de Jarque-Bera ofrece un valor de p de 9.992e-16, que es mucho 
 
 ## Hurtos
 
+Con base en las funciones de autocorrelación se decide optar por el siguiente modelo.
+
+```{r}
+#| echo: false
+
+# p max 6 , q= max6, P=11, Q=1
+# 
+
+# auto.arima(HurtosDiffS, d = 0, D = 0, max.p = 6, max.q = 6, max.P = 11, max.Q = 1)
+# auto.arima(Hurtos, max.d = 1, max.D = 1, max.p = 6, max.q = 6, max.P = 11, max.Q = 1, seasonal.test = 'ch')
+
+
+# modelo <- auto.arima(Hurtos)
+
+# modelo <- forecast::Arima(Hurtos, c(6, 1, 6),seasonal = list(order = c(1, 1, 1), period = 7),lambda = 0.5090909)
+
+# NO da nas
+
+
+# modelo <- forecast::Arima(Hurtos,
+#                           c(6, 1, 3),
+#                           seasonal = list(order = c(1, 1, 1), period = 7),
+#                           lambda = 0.5090909)
+
+
+# segundo
+modelo <- forecast::Arima(Hurtos,
+                c(6, 1, 2),
+                seasonal = list(order = c(2, 1, 1), period = 7),
+                lambda = 0.5090909)
+
+summary(modelo)
+# Tercero
+```
+
+
+### ACF y PACF de los residuales
+
+```{r}
+#| echo: false
+
+resHurtos <- residuals(modelo)
+par(mfrow=c(1,2))
+forecast::Acf(resHurtos, 80)
+forecast::Pacf(resHurtos,80)
+```
+
+
+
+
+### Prueba de Ljung-Box
+
+```{r}
+#| echo: false
+###  prueba Ljung_Box para 80 rezagos
+Ljung_Box <- NULL
+for(i in 1:80){
+ Ljung_Box1 <- Box.test(resHurtos, lag = i, type="Ljung")$p.value
+ Ljung_Box <- rbind(Ljung_Box, cbind(i,Ljung_Box1))
+}
+colnames(Ljung_Box) <- c("Rezago","p-valor");
+cat(" \n \n")
+cat("Prueba Ljung_Box Hip?tesis nula independencia \n \n")
+# Ljung_Box
+
+par(mfrow=c(1,1))
+plot(Ljung_Box, main="Prueba Ljung and Box \n H0: Independencia",ylim=c(0,1))
+abline(h=0.05,col="red")
+```
+
+
+
+
+
+### Pruebas CUSUM y CUSUMQ
+
+```{r}
+#| echo: false
+
+cucuq(resHurtos, 0.05190)
+```
+
+No hay cambios estructurales en los coeficientes del modelo ni parece haber problemas de heterocedasticidad.
+
+### Evaluación de normalidad
+
+
+```{r}
+#| echo: false
+#| # Histograma de los residuos
+hist(resHurtos, main = "Histograma de los residuos", xlab = "Residuos", col = "lightblue", border = "black")
+
+# Q-Q plot de los residuos
+qqnorm(resHurtos)
+qqline(resHurtos, col = "red")
+#Test de normalidad
+tseries::jarque.bera.test(resHurtos) # Se rechaza la hipótesis nula de normalidad, el modelo no es adecuado
+```
+Es claro que los residuales no siguen una distribución normal porque presenta colas pesadas.
+
+
 :::
+
+# Detección y Corrección de Outliers
+
+::: panel-tabset
+
+## Oro
+
+En la modelación de la serie temporal, se realizó un análisis de los residuos con el fin de identificar la presencia de valores atípicos (outliers). Estos valores extremos pueden distorsionar la estimación de los parámetros del modelo y afectar la precisión de las predicciones. Para su detección, se utilizó un criterio basado en la influencia de los valores atípicos en los residuos, considerando un umbral de significancia de 3 desviaciones estándar.
+
+
+```{r}
+#| echo: false
+
+# Extraer coeficientes del modelo ARMA(1,2)
+coef = tsoutliers::coefs2poly(arma12)
+
+# Obtener residuos del modelo
+res <- residuals(arma12)
+
+# Detectar outliers en los residuos
+outliers = tsoutliers::locate.outliers(res, coef, cval=3)
+outliers
+
+# Crear variables indicadoras de los outliers
+xreg_outliers = tsoutliers::outliers.effects(outliers, length(res))
+
+# Ajustar de nuevo el modelo ARMA(1,2) con los outliers corregidos
+arma12 = update(arma12, xreg = xreg_outliers)
+
+# xreg_outliersF <- rbind(c(0,0),xreg_outliers)
+# arma12F <- Arima(oro, order = c(1, 1, 2), include.mean = F, lambda = 0, xreg = xreg_outliersF)
+
+
+```
+
+Los resultados indicaron la presencia de outliers en ciertos períodos, lo que sugiere la existencia de eventos anómalos que impactaron la serie. Para corregir este efecto, se incluyeron variables indicadoras que capturan la influencia de estos valores atípicos, permitiendo que el modelo los absorba en lugar de afectar la estructura general de la serie.
+
+```{r}
+#| echo: false
+
+summary(arma12)
+```
+
+
+Finalmente, se obtiene el modelo ARMA(1,2) corregido como
+
+$$
+\begin{aligned}
+Y_t &= 0.0075 + 
+0.8569Y_{t−1}+
+\epsilon_t−
+0.7749\epsilon_{t−1}−
+0.2251\epsilon_{t−2}+ \\
+&\quad 0.1258I_{16,t}+
+0.1656I_{31,t} +
+0.1183I_{95,t}+
+0.1932I_{128,t} - \\
+&\quad 0.0974I_{222,t}
+\end{aligned}
+$$
+
+
+
+Se verifican las cartas **CUSUM Y CUSUMQ** para ver si hay mejoría en los residuales del modelo corregido por outliers.
+
+```{r}
+#| echo: false
+
+cucuq(residuals(arma12),0.11848)
+par(mar=c(2.5,2.5,2,1))
+tsdiag(arma12)
+
+```
+El modelo ya no presenta efecto de heterocedasticidad!.
+
+
+
+## Hurtos
+
+
+
+```{r}
+#| echo: false
+
+# Extraer coeficientes del modelo de Hurtos
+coefHurtos = tsoutliers::coefs2poly(modelo)
+
+# Obtener residuos del modelo
+resHurtos <- residuals(modelo)
+
+# Detectar outliers en los residuos
+outliersHurtos = tsoutliers::locate.outliers(resHurtos, coefHurtos, cval=3)
+table(outliersHurtos$type)
+
+# Crear variables indicadoras de los outliers
+
+# xreg_outliersHurtos = tsoutliers::outliers.effects(outliersHurtos, length(resHurtos))
+
+# Ajustar de nuevo el modelo con los outliers corregidos
+
+# modelo = update(modelo, xreg = xreg_outliersHurtos)
+
+
+```
+Los outliers más frecuentes son de cambio de nivel(**LS**), aditivos(**A0**) y de cambio temporal(**TC**). Sin embargo no se pudo re estimar el modelo con las variables para los outliers; posiblemente por multicolinealidad.
+
+```{r}
+#| echo: false
+par(mar=c(2.5,2.5,2,1))
+tsdiag(modelo,gof.lag = 80)
+```
+Hay presencia de outliers. No hay autocorrelación en los residuales hasta el rezago 80!.
+
+:::
+
+
+
 
 # Capacidad predictiva
 
 En esta sección se determinará la capacidad de generalización de los modelos; con los parámetros estimados se calcularán métricas en los valores predecidos sobre la muestra de prueba.
+
+::: panel-tabset
+
+## Oro
 
 ```{r OroARIMA}
 #| echo: false
@@ -330,12 +603,6 @@ OroT <- ts(data=OroTest$Pesos, start = c(2019,4), frequency = 12)
 
 
 
-
-::: panel-tabset
-
-## Oro
-
-
 ```{r OroMetricas}
 #| echo: false
 
@@ -347,10 +614,264 @@ Metricas <- rbind(Train,Test)
 rownames(Metricas) <- c('Entrenamiento','Prueba')
 Metricas
 
+
+
+
+
 ```
 
 
 ## Hurtos
 
-::: 
 
+
+```{r HurtosSARIMA}
+#| echo: false
+
+# Acá se usa la serie original y se hace la transf. y diff.
+
+# Serie sobre el conjunto de prueba
+HurtosT <- ts(data=HurtosTest$Cantidad, start = c(2019,4), frequency = 365)
+```
+
+
+
+```{r HurtosMetricas}
+#| echo: false
+
+HurtosSARIMA.eval <-forecast::Arima(HurtosT, model = modelo)
+Train <- forecast::accuracy(modelo)
+Test <- forecast::accuracy(HurtosSARIMA.eval)
+
+Metricas <- rbind(Train,Test)
+rownames(Metricas) <- c('Entrenamiento','Prueba')
+Metricas
+
+
+```
+
+
+:::
+
+
+# Predicción
+
+
+::: panel-tabset
+
+## Oro
+
+Se realizó un pronóstico a un horizonte de 12 periodos (un año), utilizando el modelo ARMA(1,0,2) ajustado a la serie estacionaria. A continuación, se presenta el gráfico del pronóstico obtenido.
+
+
+```{r}
+#| echo: false
+library(forecast)
+newxreg <- matrix(0, nrow = 12, ncol = ncol(xreg_outliers))
+colnames(newxreg) <- colnames(xreg_outliers)
+pred <- forecast::forecast(arma12, h = 12, xreg = newxreg)
+plot(pred)
+```
+
+El gráfico muestra que las predicciones tienden a la media de la serie, lo cual es esperado en modelos ARMA aplicados a series estacionarias. La banda de confianza se amplía con el horizonte de predicción, reflejando mayor incertidumbre.
+
+Este resultado sugiere que el modelo captura bien la estructura de corto plazo, pero puede requerir ajustes para pronósticos de más largo plazo.
+
+Si la serie original representa la evolución del precio del oro para regalías en Colombia, entonces su transformación logarítmica mide la tasa de crecimiento relativa del precio a lo largo del tiempo. Esto permite estabilizar la varianza y facilita la modelación de cambios proporcionales en lugar de valores absolutos.
+
+
+```{r}
+#| echo: false
+#| warning: false
+newxreg <- matrix(0, nrow = 64, ncol = ncol(xreg_outliers))
+xreg_outliersF <- rbind(xreg_outliers,newxreg)
+
+
+oro <- ts(DatosO[2], start=c(1998,7), end = c(2024,6), frequency = 12)
+
+modeloOro <- Arima(oro, order = c(1, 1, 2), seasonal = list(order=c(0,1,1),period=12), include.drift = T, lambda = 0, xreg = xreg_outliersF)
+
+
+newxreg <- matrix(0, nrow = 12, ncol = ncol(xreg_outliers))
+s <- forecast::forecast(modeloOro,h=12, xreg=newxreg)
+
+fitted_time   <- zoo::as.Date(zoo::as.yearmon(time(s$fitted)))
+forecast_time <- zoo::as.Date(zoo::as.yearmon(time(s$mean)))
+
+# Extraemos cada serie numérica
+fitted_vals   <- as.numeric(s$fitted)
+mean_vals     <- as.numeric(s$mean)
+lower_80      <- as.numeric(s$lower[,1])
+lower_95      <- as.numeric(s$lower[,2])
+upper_80      <- as.numeric(s$upper[,1])
+upper_95      <- as.numeric(s$upper[,2])
+
+# Construimos la gráfica con plotly
+fig <- plot_ly() %>%
+  
+  # 1) Valores ajustados (fitted) del modelo
+  add_trace(
+    x = fitted_time,
+    y = fitted_vals,
+    type = 'scatter',
+    mode = 'lines',
+    name = 'Ajustados'
+  ) %>%
+  
+  # 2) Pronóstico (mean)
+  add_trace(
+    x = forecast_time,
+    y = mean_vals,
+    type = 'scatter',
+    mode = 'lines',
+    name = 'Pronóstico'
+  ) %>%
+  
+  # 3) Intervalo de confianza al 95%
+  add_ribbons(
+    x = forecast_time,
+    ymin = lower_95,
+    ymax = upper_95,
+    name = 'IC 95%',
+    # fillcolor y line.color los puedes ajustar como gustes;
+    # aquí se deja un ejemplo de transparencia para ver el pronóstico detrás
+    fillcolor = 'rgba(7, 164, 181, 0.2)', 
+    line = list(color = 'rgba(7, 164, 181, 0.2)')
+  ) %>%
+  
+  # 4) Intervalo de confianza al 80%
+  add_ribbons(
+    x = forecast_time,
+    ymin = lower_80,
+    ymax = upper_80,
+    name = 'IC 80%',
+    fillcolor = 'rgba(7, 164, 181, 0.4)', 
+    line = list(color = 'rgba(7, 164, 181, 0.4)')
+  ) %>%
+  
+  layout(
+    title = 'Valores Ajustados y Pronóstico con Intervalos de Confianza',
+    xaxis = list(title = 'Fecha'),
+    yaxis = list(title = 'Valor')
+  )
+
+fig
+```
+
+El modelo sigue la tendencia creciente de la serie, aunque la amplitud del intervalo de confianza aumenta con el horizonte de pronóstico, lo que sugiere mayor incertidumbre en las proyecciones a largo plazo.
+
+Los valores siguen una tendencia creciente. El precio del oro para regalías en Colombia presenta un crecimiento sostenido en el horizonte de pronóstico.
+
+
+
+
+## Hurtos
+
+```{r}
+#| echo: false
+#| warning: false
+
+# Crear la serie temporal con frecuencia diaria
+HurtosF <- ts(DatosH$Cantidad, start = c(2003, 1), frequency = 365)
+
+# Ajustar el modelo ARIMA estacional
+modeloHurtos <- forecast::Arima(
+  y = HurtosF, 
+  order = c(6, 1, 2), 
+  seasonal = list(order = c(2, 1, 1), period = 7), 
+  lambda = 0.5090909
+)
+
+
+
+# Generar el pronóstico
+s <- forecast::forecast(modeloHurtos, h = 7)
+
+# Extraer fecha de inicio de la serie temporal
+fecha_inicio <- as.Date("2003-01-01")
+# Convertir fechas de fitted y forecast
+fitted_time   <- seq(from = fecha_inicio, by = "day", length.out = length(s$fitted))
+forecast_time <- seq(from = tail(fitted_time, 1) + 9, by = "day", length.out = length(s$mean))
+# Extraer valores de fitted y forecast
+fitted_vals   <- as.numeric(s$fitted)
+mean_vals     <- as.numeric(s$mean)
+lower_80      <- as.numeric(s$lower[, 1])
+lower_95      <- as.numeric(s$lower[, 2])
+upper_80      <- as.numeric(s$upper[, 1])
+upper_95      <- as.numeric(s$upper[, 2])
+# Construcción del gráfico interactivo con predicciones
+fig <- plot_ly() %>%
+# Datos históricos
+add_trace(
+data = DatosH,
+x = ~Fecha,
+y = ~Cantidad,
+type = 'scatter',
+mode = 'lines',
+line = list(color = 'purple'),
+name = 'Histórico'
+) %>%
+# Valores ajustados del modelo (fitted)
+add_trace(
+x = fitted_time,
+y = fitted_vals,
+type = 'scatter',
+mode = 'lines',
+line = list(color = 'green'),
+name = 'Ajustados'
+) %>%
+# Línea de predicción
+add_trace(
+x = forecast_time,
+y = mean_vals,
+type = 'scatter',
+mode = 'lines',
+line = list(color = 'blue', dash = 'dot'),
+name = 'Predicción'
+) %>%
+# Banda de intervalo de confianza al 95%
+add_ribbons(
+x = forecast_time,
+ymin = lower_95,
+ymax = upper_95,
+name = 'IC 95%',
+fillcolor = 'rgba(7, 164, 181, 0.2)',
+line = list(color = 'rgba(7, 164, 181, 0.2)'),
+hoverinfo = "text",
+hovertext = paste0("Límite Inferior 95%: ", round(lower_95, 2),
+"<br>Límite Superior 95%: ", round(upper_95, 2))
+) %>%
+# Banda de intervalo de confianza al 80%
+add_ribbons(
+x = forecast_time,
+ymin = lower_80,
+ymax = upper_80,
+name = 'IC 80%',
+fillcolor = 'rgba(7, 164, 181, 0.4)',
+line = list(color = 'rgba(7, 164, 181, 0.4)'),
+hoverinfo = "text",
+hovertext = paste0("Límite Inferior 80%: ", round(lower_80, 2),
+"<br>Límite Superior 80%: ", round(upper_80, 2))
+) %>%
+layout(
+title = "Vehículos hurtados en Bogotá",
+xaxis = list(
+title = "Fecha",
+rangeselector = list( # Botones de zoom rápido
+buttons = list(
+list(count = 1, label = "1m", step = "month", stepmode = "backward"),
+list(count = 6, label = "6m", step = "month", stepmode = "backward"),
+list(count = 1, label = "1y", step = "year", stepmode = "backward"),
+list(step = "all")
+)
+),
+rangeslider = list(visible = TRUE) # Agregar slider interactivo
+),
+yaxis = list(title = "Total Hurtos"),
+hovermode = "x"
+)
+# Mostrar la figura
+fig
+```
+
+Se observa que las predicciones tienden a la media del último mes (Diciembre de 2024); debido a la formulación del modelo. El horizonte de pronóstico es conservador (7 días) y esto asegura que la estimación por intervalo sea positiva.

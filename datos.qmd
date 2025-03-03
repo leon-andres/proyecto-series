@@ -5,7 +5,7 @@ Volumen de exportaciones de café.
 ::: panel-tabset
 ## Oro
 
-![](_book/Cafe1.png){fig-align="center" width="15cm" height="4cm"}
+![](_book/Oro1.png){fig-align="center" width="15cm" height="4cm"}
 
 Este estudio analiza la evolución del precio del oro para regalías en Colombia, medido en pesos colombianos por gramo fino, con datos registrados el primero de cada mes desde julio de 1998 hasta junio de 2024.
 
