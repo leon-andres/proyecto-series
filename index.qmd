@@ -14,11 +14,11 @@ Se evaluará la bondad de ajuste de cada uno de los modelos, así como la compro
 
 2.  **Ajuste de modelos.**
 
-    -   Modelos SARIMA
+    -   Modelos de la familia SARIMA
         -   [X] Implementación.
 
         -   [X] Diagnóstico de residuales.
     -   Modelo random Forest
-        -   [ ] Implementación.
-
-        -   [ ] Diagnóstico de residuales.
+        -   [X] Implementación.
+    -   Red Neuronal LSTM para la serie de Hurtos.
+        -   [X] Implementación.

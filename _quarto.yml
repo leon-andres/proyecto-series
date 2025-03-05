@@ -10,6 +10,8 @@ book:
     - datos.qmd
     - eed.qmd
     - ModClasicos.qmd
+    - RandomForestProyecto.qmd
+    - Conclusiones.qmd
 
 bibliography: references.bib
 
@@ -20,4 +22,7 @@ format:
     documentclass: scrreprt
 
 editor: visual
+
+jupyter:
+  kernel: "SeriesTiempoForecast" 
 

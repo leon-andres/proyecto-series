@@ -25,7 +25,7 @@ library(plotly)
 
 ## Partición 
 
-Se realizará la partición de los datos en 80% para entrenamiento y 20% para prueba con el fin de ver la capacidad predictiva de los modelos propuestas que surjan por el proceso. Para la serie del Oro hay 249 observaciones en entrenamiento y 63 de prueba. En la serie de Hurtos hay 12844 para entrenamiento y 6422 para prueba.
+Se realizará la partición de los datos en 80% para entrenamiento y 20% para prueba con el fin de ver la capacidad predictiva de los modelos propuestas que surjan por el proceso. Para la serie del Oro hay 249 observaciones en entrenamiento y 63 de prueba. En la serie de Hurtos hay 6422 para entrenamiento y 1606 para prueba.
 
 Del análisis anterior se trabajará con las series diferenciadas porque son la manera más efectiva de disminuir la estructura de autocorrelación y eliminar la tendencia.
 
