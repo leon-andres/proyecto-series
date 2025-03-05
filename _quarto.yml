@@ -11,6 +11,8 @@ book:
     - eed.qmd
     - ModClasicos.qmd
     - RandomForestProyecto.qmd
+    - prophet.qmd
+    - RNLSTMHurtos.qmd
     - Conclusiones.qmd
 
 bibliography: references.bib

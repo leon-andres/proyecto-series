@@ -1,0 +1,219 @@
+
+---
+title: "Modelo Prophet"
+---
+
+```{r Librerias}
+#| echo: false
+#| warnings: false
+#| include: false
+
+
+library(dplyr)
+library(readxl)
+library(readr)
+library(plotly)
+library(ggplot2)
+library(prophet)
+```
+
+```{r CargarObjetos}
+#| echo: false
+#| warnings: false
+
+load("ObjetosDescriptiva.Rdata")
+
+# Función para preparar datos para Prophet
+prepare_prophet_data <- function(data, date_col, value_col) {
+  data %>%
+    rename(ds = {{ date_col }}, y = {{ value_col }}) %>%
+    mutate(ds = as.Date(ds)) %>% # Asegurar que la fecha esté en formato Date
+    select(ds, y)
+}
+
+# Preparar datos de Oro
+Oro_prophet <- prepare_prophet_data(DatosO, Fecha, Pesos)
+
+# Preparar datos de Hurtos
+Hurtos_prophet <- prepare_prophet_data(DatosH, Fecha, Cantidad)
+```
+
+
+```{r Partición}
+#| echo: false
+#| warnings: false
+# Oro
+ntrain_oro <- trunc(nrow(Oro_prophet) * 0.8)
+Oro_train <- Oro_prophet[1:ntrain_oro, ]
+Oro_test <- Oro_prophet[(ntrain_oro + 1):nrow(Oro_prophet), ]
+
+# Hurtos
+ntrain_hurtos <- trunc(nrow(Hurtos_prophet) * 0.8)
+Hurtos_train <- Hurtos_prophet[1:ntrain_hurtos, ]
+Hurtos_test <- Hurtos_prophet[(ntrain_hurtos + 1):nrow(Hurtos_prophet), ]
+```
+
+
+# Introducción a Prophet
+
+Prophet es un procedimiento para pronosticar datos de series temporales basado en un modelo aditivo en el que las tendencias no lineales se ajustan con la estacionalidad anual, semanal y diaria, además de los efectos de las festividades. Funciona mejor con series temporales que tienen fuertes efectos estacionales y varias temporadas de datos históricos. Prophet es robusto para datos faltantes y cambios en la tendencia, y generalmente maneja bien los valores atípicos.
+
+## Componentes del Modelo Prophet
+
+El modelo Prophet se compone de tres componentes principales:
+
+1.  **Tendencia (g(t)):**
+    * Prophet utiliza dos modelos de tendencia: una tendencia de tasa de crecimiento no saturada y una tendencia de tasa de crecimiento saturada. 
+    La tendencia no saturada es lineal por tramos (similar a una regresión piecewise), mientras que la tendencia saturada permite que la tasa de 
+    crecimiento cambie a medida que la serie temporal se acerca a un máximo o mínimo (similar a la forma de una regresión logística).
+2.  **Estacionalidad (s(t)):**
+    * Se modela la estacionalidad utilizando series de Fourier. Por defecto, Prophet considera la estacionalidad anual y semanal, pero también se puede agregar estacionalidad diaria y otras estacionalidades personalizadas.
+3.  **Holidays (h(t)):**
+    * Se incluye el efecto de los días festivos y eventos especiales. Se debe proporcionar una lista de los días festivos y sus fechas, y se modelará su impacto en la serie.
+4.  **Término de error:**
+    * No se asume que los errores siguen una distribución en particular.
+
+En resumen, el modelo Prophet se representa como:
+
+$y(t) = g(t) + s(t) + h(t) + \epsilon(t)$
+
+donde:
+
+* `g(t)` es la función de tendencia.
+* `s(t)` es la función de estacionalidad.
+* `h(t)` representa los efectos de los días festivos.
+* `ε(t)` es el término de error.
+
+## Ventajas de Prophet
+
+* **Automatización:**
+    * Prophet está diseñado para ser fácil de usar y requiere poca experiencia en series temporales.
+* **Flexibilidad:**
+    * Permite modelar una variedad de efectos, como tendencias no lineales, estacionalidad y días festivos.
+* **Robustez:**
+    * Maneja bien los datos faltantes y los valores atípicos.
+* **Velocidad:**
+    * Prophet es muy rápido, lo que lo hace útil para grandes conjuntos de datos. Por ejemplo, en este caso tardaba menos de 10 segundos en 
+    entrenar un modelo con estacionalidades para la serie de Hurtos a diferencia de la función auto.arima que tardó horas y nunca finalizó.
+
+# Estimación de modelos
+
+::: panel-tabset
+## Oro
+
+```{r}
+#| echo: false
+```
+```{r}
+#| echo: false
+#| warnings: false
+
+# Entrenar modelo Prophet para Oro usando datos de entrenamiento
+model_oro <- prophet(Oro_train)
+
+# Obtener predicciones dentro de la muestra (datos de entrenamiento)
+# forecast_oro_train <- predict(model_oro, Oro_train)
+forecast_oro_train <- predict(model_oro, Oro_prophet)
+
+
+
+# Calcular MSE para el conjunto de prueba de Oro
+calculate_mse <- function(actual, predicted) {
+  mse <- mean((actual - predicted)^2)
+  return(mse)
+}
+calculate_mae <- function(actual, predicted) {
+  abs_error <- abs(actual - predicted)
+  mae <- mean(abs_error)
+  return(mae)
+}
+
+mse_oro_test <- calculate_mse(Oro_test$y, tail(forecast_oro_train$yhat, 63))
+mae_oro_test <- calculate_mae(Oro_test$y, tail(forecast_oro_train$yhat, 63))
+
+print(paste("MSE para Oro (test):", mse_oro_test))
+print(paste("RMSE para Oro (test):", sqrt(mse_oro_test)))
+print(paste("MAE para Oro (test):", mae_oro_test))
+
+# Combinar datos originales de entrenamiento y predicciones
+combined_oro_train <- Oro_prophet %>%
+  mutate(yhat = forecast_oro_train$yhat)
+
+
+# Graficar datos originales de entrenamiento y predicciones
+ggplot(combined_oro_train, aes(x = ds)) +
+  geom_line(aes(y = y, color = "Datos originales")) +
+  geom_line(aes(y = yhat, color = "Predicciones (entrenamiento)")) +
+  labs(
+    title = "Predicciones dentro de la muestra para Oro",
+    x = "Fecha",
+    y = "Pesos"
+  ) +
+  scale_color_manual(values = c("Datos originales" = "blue", "Predicciones (entrenamiento)" = "red"))
+```
+### Descomposición del modelo
+
+```{r}
+#| echo: false
+#| warnings: false
+model_oro_2 <- prophet(Oro_prophet)
+
+future <- make_future_dataframe(model_oro_2, periods = 365) # Predicción para 1 año
+forecast <- predict(model_oro_2, future)
+plot(model_oro_2, forecast) +
+  labs(title = paste("Predicción fuera de muestra de oro con Prophet"))
+prophet_plot_components(model_oro_2, forecast)
+```
+
+
+
+
+
+## Hurtos
+
+```{r}
+#| echo: false
+#| warnings: false
+
+model_hurtos <- prophet(Hurtos_train)
+
+# Obtener predicciones dentro de la muestra (datos de entrenamiento)
+forecast_hurtos_train <- predict(model_hurtos, Hurtos_prophet)
+
+
+mse_hurtos_test <- calculate_mse(Hurtos_test$y, tail(forecast_hurtos_train$yhat, 1606))
+mae_hurtos_test <- calculate_mae(Hurtos_test$y, tail(forecast_hurtos_train$yhat, 1606))
+
+print(paste("MSE para Hurtos (test):", mse_hurtos_test))
+print(paste("RMSE para Hurtos (test):", sqrt(mse_hurtos_test)))
+print(paste("MAE para Hurtos (test):", mae_hurtos_test))
+
+# Combinar datos originales de entrenamiento y predicciones
+combined_hurtos_train <- Hurtos_prophet %>%
+  mutate(yhat = forecast_hurtos_train$yhat)
+
+
+# Graficar datos originales de entrenamiento y predicciones
+ggplot(combined_hurtos_train, aes(x = ds)) +
+  geom_line(aes(y = y, color = "Datos originales")) +
+  geom_line(aes(y = yhat, color = "Predicciones (entrenamiento)")) +
+  labs(
+    title = "Predicciones dentro de la muestra para Hurtos",
+    x = "Fecha",
+    y = "Hurtos"
+  ) +
+  scale_color_manual(values = c("Datos originales" = "blue", "Predicciones (entrenamiento)" = "red"))
+```
+
+```{r}
+#| echo: false
+#| warnings: false
+model_hurtos_2 <- prophet(Hurtos_prophet)
+future <- make_future_dataframe(model_hurtos_2, periods = 7) # Predicción para 1 semana
+forecast <- predict(model_hurtos_2, future)
+dyplot.prophet(model_hurtos_2, forecast)
+prophet_plot_components(model_hurtos_2, forecast)
+```
+
+
+:::

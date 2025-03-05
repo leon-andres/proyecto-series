@@ -2,7 +2,9 @@
 title: "Conclusiones"
 ---
 
-Los modelos clásicos obtuvieron un mejor desempeño en las dos series. Con los modelos de Random Forest no se pudo capturar la variabilidad en el conjunto de prueba y su capacidad de generalización es mala. A continuación se encuentran las métricas:
+Los **modelos clásicos**  obtuvieron un mejor desempeño en el conjunto de prueba de las dos series. Con los modelos de **Random Forest** y **Prophet** no se pudo capturar la variabilidad en el conjunto de prueba y su capacidad de generalización no es buena para la serie del Oro a pesar de que se exploró la búsqueda de hiperparámetros usando **GridSearch**.En la serie de Hurtos usando el modelo **Prophet** y la **Red Neuronal LSTM** hubo un mejor ajuste en las predicciones en prueba respecto al modelo de árboles; **Prophet** se desempeñó bien quizás por su habilidad en capturar la estacionalidad de 7 días con su función estacional `s(t)`.
+
+A continuación se encuentran las métricas sobre las dos particiones para cada serie con los modelos ajustados:
 
 ::: panel-tabset
 ## Oro
@@ -11,6 +13,7 @@ Los modelos clásicos obtuvieron un mejor desempeño en las dos series. Con los 
 |---------------|----------|----------|
 | ARIMA         | 7538.945 | 5668.941 |
 | Random Forest |54476.0827|49664.8086|
+| Prophet       |70344.3969|64644.6980|
 
 : Error de generalización en el conjunto de prueba serie del Oro
 
@@ -20,6 +23,7 @@ Los modelos clásicos obtuvieron un mejor desempeño en las dos series. Con los 
 |---------------|---------|---------|
 | SARIMA        | 6.1767  | 4.8889  |
 | Random Forest | 25.8013 | 24.5225 |
+| Prophet       | 7.4016  | 5.9001  |
 | R.N. LSTM     | 10.0413 | 8.2180  |
 
 : Error de generalización en el conjunto de prueba serie de Hurtos
