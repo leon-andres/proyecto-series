@@ -1,0 +1,5 @@
+---
+title: "RN LSTM Hurtos"
+---
+
+En [este cuaderno](https://github.com/leon-andres/proyecto-series/blob/Libro/hurtos_lstm.ipynb) se encuentra la implementación de la **Red Neuronal LSTM** para la serie de Hurtos de vehículos en Bogotá.
