@@ -1,0 +1,26 @@
+---
+title: "Conclusiones"
+---
+
+Los modelos clásicos obtuvieron un mejor desempeño en las dos series. Con los modelos de Random Forest no se pudo capturar la variabilidad en el conjunto de prueba y su capacidad de generalización es mala. A continuación se encuentran las métricas:
+
+::: panel-tabset
+## Oro
+
+| Modelo        | RMSE     | MAE      |
+|---------------|----------|----------|
+| ARIMA         | 7538.945 | 5668.941 |
+| Random Forest |54476.0827|49664.8086|
+
+: Error de generalización en el conjunto de prueba serie del Oro
+
+## Hurtos
+
+| Modelo        | RMSE    | MAE     |
+|---------------|---------|---------|
+| SARIMA        | 6.1767  | 4.8889  |
+| Random Forest | 25.8013 | 24.5225 |
+| R.N. LSTM     | 10.0413 | 8.2180  |
+
+: Error de generalización en el conjunto de prueba serie de Hurtos
+:::
